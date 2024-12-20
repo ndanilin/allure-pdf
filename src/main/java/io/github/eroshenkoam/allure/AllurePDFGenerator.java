@@ -11,11 +11,7 @@ import com.lowagie.text.Paragraph;
 import com.lowagie.text.Phrase;
 import com.lowagie.text.pdf.PdfWriter;
 import io.github.eroshenkoam.allure.util.PdfUtil;
-import io.qameta.allure.model.Attachment;
-import io.qameta.allure.model.Label;
-import io.qameta.allure.model.StatusDetails;
-import io.qameta.allure.model.StepResult;
-import io.qameta.allure.model.TestResult;
+import io.qameta.allure.model.*;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 
@@ -26,19 +22,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static io.github.eroshenkoam.allure.FontHolder.loadArialFont;
 import static io.github.eroshenkoam.allure.util.PdfUtil.addEmptyLine;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.mapping;
+import static java.util.stream.Collectors.*;
 
 public class AllurePDFGenerator {
 
@@ -48,12 +37,14 @@ public class AllurePDFGenerator {
     private final Path reportPath;
     private final Map<String, String> filter;
     private final StatusColors statusColors;
+    private final List<Status> statuses;
 
-    public AllurePDFGenerator(final String reportName, final Path reportPath, final StatusColors statusColors) {
+    public AllurePDFGenerator(final String reportName, final Path reportPath, final StatusColors statusColors, final String statuses) {
         this.filter = new HashMap<>();
         this.reportName = reportName;
         this.reportPath = reportPath;
         this.statusColors = statusColors;
+        this.statuses = parseStatusesStr(statuses);
     }
 
     public void filter(final Map<String, String> tags) {
@@ -97,6 +88,12 @@ public class AllurePDFGenerator {
 
             for (Path path : files) {
                 final TestResult result = new ObjectMapper().readValue(path.toFile(), TestResult.class);
+
+                if (!statuses.isEmpty()) {
+                    boolean suitableStatus = statuses.contains(result.getStatus());
+                    if (!suitableStatus) continue;
+                }
+
                 final Map<String, List<String>> labels = result.getLabels().stream().collect(
                         Collectors.groupingBy(Label::getName, Collectors.mapping(Label::getValue, Collectors.toList()))
                 );
@@ -211,6 +208,20 @@ public class AllurePDFGenerator {
 
     private void log(String template, Object... values) {
         System.out.println(String.format(template, values));
+    }
+
+    private List<Status> parseStatusesStr(String statuses) {
+        List<Status> statusList = new ArrayList<>();
+        if (statuses != null) {
+            statusList = Arrays
+                    .stream(statuses
+                            .toUpperCase()
+                            .split(","))
+                    .map(Status::valueOf)
+                    .collect(toList());
+        }
+
+        return statusList;
     }
 
 }

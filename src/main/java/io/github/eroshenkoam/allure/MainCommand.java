@@ -39,6 +39,12 @@ public class MainCommand implements Runnable {
     @CommandLine.ArgGroup
     protected StatusColorOptions statusColorOptions = new StatusColorOptions();
 
+    @CommandLine.Option(
+            names = {"-s", "--statuses"},
+            description = "Statuses for which the report should be built (separated by commas)"
+    )
+    protected String statuses;
+
     @Override
     public void run() {
         try {
@@ -48,7 +54,7 @@ public class MainCommand implements Runnable {
             statusColors.setStatusColors(Status.BROKEN, statusColorOptions.getBroken());
             statusColors.setStatusColors(Status.SKIPPED, statusColorOptions.getSkipped());
 
-            final AllurePDFGenerator generator = new AllurePDFGenerator(reportName, reportPath, statusColors);
+            final AllurePDFGenerator generator = new AllurePDFGenerator(reportName, reportPath, statusColors, statuses);
             generator.filter(filter);
             generator.generate(outputPath);
             ;

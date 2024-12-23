@@ -1,7 +1,7 @@
 plugins {
     java
     application
-    id("com.jfrog.bintray") version "1.8.5"
+//    id("com.jfrog.bintray") version "1.8.5"
 }
 
 group = "io.github.eroshenkoam"
